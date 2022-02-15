@@ -150,19 +150,24 @@ function vw__reload() {
     fi
 }
 
+function vw__edit() {
+    eval "$VISUAL" "$(vw__location)/$1"
+}
+
 alias vw='vw__make'
-alias vw.help='vw__help'
-alias vw.x='deactivate'
-alias vw.rm='vw__remove'
+alias vw.alias='vw__aliases'
 alias vw.cd='vw__cd'
+alias vw.cdb='vw__cd bin'
 alias vw.cds='vw__cd'
 alias vw.cdsrc='vw__cd src'
-alias vw.cdb='vw__cd bin'
 alias vw.dir='vw__location'
+alias vw.edit='vw__edit'
+alias vw.help='vw__help'
 alias vw.ls='vw__list'
-alias vw.lss='vw__list src'
 alias vw.lsb='vw__list bin'
+alias vw.lss='vw__list src'
+alias vw.reload='vw__reload'
+alias vw.rm='vw__remove'
 alias vw.what='vw__which'
 alias vw.which='vw__which'
-alias vw.alias='vw__aliases'
-alias vw.reload='vw__reload'
+alias vw.x='deactivate'

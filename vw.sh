@@ -11,7 +11,9 @@ mkdir -p "${VW_HOME}"
 vw__shell=${SHELL##*/}
 
 function vw__pyversion() {
-    echo ${$(python -V 2>&1 | cut -f2 -d" ")%.*}
+    local result
+    result=$(python -V 2>&1 | cut -f2 -d" ")
+    echo "${result%.*}"
 }
 
 function vw__help() {
@@ -36,8 +38,9 @@ function vw__help() {
 }
 
 function vw__which() {
-    if [ $VIRTUAL_ENV ]; then
-        local pyver=$(python -V 2>&1 | cut -d" " -f 2)
+    if [ "$VIRTUAL_ENV" ]; then
+        local pyver
+        pyver=$(python -V 2>&1 | cut -d" " -f 2)
         echo "VIRTUAL_ENV = $VIRTUAL_ENV (${pyver})"
     else
         echo VIRTUAL_ENV Not Set
@@ -47,7 +50,9 @@ function vw__which() {
 function vw__where() {
     local where="$1"
     if [[ ${where} =~ "/" ]]; then
-        echo $(python -c "import os,sys;print(os.path.abspath(sys.argv[1]))" "${where}")
+        local result
+        result=$(python -c "import os,sys;print(os.path.abspath(sys.argv[1]))" "${where}")
+        echo "${result}"
     else
         echo "$VW_HOME/$where"
     fi
@@ -55,28 +60,30 @@ function vw__where() {
 
 function vw__show() {
     local ver=""
-    for name in $VW_HOME/*; do
-        if [[ -d $name && -e $name/bin/python ]]; then
-            ver=$($name/bin/python -V 2>&1 | cut -d" " -f 2)
-            printf "%-20s %s\n" "$(basename $name)" "$ver"
+    for name in "$VW_HOME"/*; do
+        if [[ -d "$name" && -e "$name/bin/python" ]]; then
+            ver=$("$name/bin/python" -V 2>&1 | cut -d" " -f 2)
+            printf "%-20s %s\n" "$(basename "$name")" "$ver"
         fi
     done
 }
 
 function vw__make() {
     local name="$1"
-    local pyver=$(python -V 2>&1 | cut -d" " -f 2)
-    if [ -z $name ]; then
+    local pyver
+    pyver=$(python -V 2>&1 | cut -d" " -f 2)
+    if [ -z "$name" ]; then
         vw__show
         return 0
     else
-        local fullpath="$(vw__where $name)"
-        if [ $VIRTUAL_ENV ]; then
+        local fullpath
+        fullpath="$(vw__where "$name")"
+        if [ "$VIRTUAL_ENV" ]; then
             echo Deactivating: "$VIRTUAL_ENV"
-            deactivate 2>&1 > /dev/null
+            deactivate > /dev/null 2>&1
         fi
 
-        if [ -d $fullpath ]; then
+        if [ -d "$fullpath" ]; then
             echo "Found $fullpath"
         else
             if [[ ${pyver} =~ "^2" ]]; then
@@ -88,42 +95,46 @@ function vw__make() {
             fi
         fi
         echo Activating "$fullpath"
+
+        # shellcheck source=/dev/null
         source "$fullpath/bin/activate"
     fi
 }
 
 function vw__location() {
     if [[ -z $1 ]]; then
-        echo $VIRTUAL_ENV/lib/python$(vw__pyversion)/site-packages
+        echo "$VIRTUAL_ENV"/lib/python"$(vw__pyversion)"/site-packages
     else
-        echo $VIRTUAL_ENV/$1
+        echo "$VIRTUAL_ENV/$1"
     fi
 }
 
 function vw__cd() {
-    if [ $VIRTUAL_ENV ]; then
-        pushd "$(vw__location $1)"
+    if [ "$VIRTUAL_ENV" ]; then
+        pushd "$(vw__location "$1")" || exit
     else
         echo "Virtual env not activated"
     fi
 }
 
 function vw__remove () {
-    for arg in $*; do
-        local where="$(vw__where $arg)"
+    for arg in "$@"; do
+        local where
+        where=$(vw__where "$arg")
         if [ "$where" != "/" ]; then
             if [ "$where" = "$VIRTUAL_ENV" ]; then
-                deactivate 2>&1 > /dev/null
+                deactivate > /dev/null 2>&1
             fi
-            echo Removing $where
+            echo Removing "$where"
             rm -rf "$where"
         fi
     done
 }
 
 function vw__list() {
-    if [ $VIRTUAL_ENV ]; then
-        local location="$(vw__location $1)"
+    if [ "$VIRTUAL_ENV" ]; then
+        local location
+        location=$(vw__location "$1")
         echo "Listing $location"
         ls -Al "$location"
     else
@@ -142,10 +153,12 @@ function vw__aliases() {
 
 function vw__reload() {
     if [[ "$vw__shell" = "zsh" ]]; then
-        echo "Reloading ${(%):-%x}"
+        echo "zsh Reloading ${(%):-%x}"
+        # shellcheck source=/dev/null
         source "${(%):-%x}"
     else
-        echo "Reloading ${BASH_SOURCE[0]}"
+        echo "bash Reloading ${BASH_SOURCE[0]}"
+        # shellcheck source=/dev/null
         source "${BASH_SOURCE[0]}"
     fi
 }
